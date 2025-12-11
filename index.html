@@ -1,500 +1,243 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Circular Twin EoL Calculator</title>
-    <style>
-        :root {
-            --primary: linear-gradient(135deg, #2c3e50, #3498db);
-            --success: linear-gradient(135deg, #27ae60, #2ecc71);
-            --danger: linear-gradient(135deg, #e74c3c, #c0392b);
-            --warning: linear-gradient(135deg, #f39c12, #e67e22);
-            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
-            background: var(--bg-gradient); 
-            min-height: 100vh; 
-            padding: 20px; 
-            line-height: 1.6;
-        }
-        .container { 
-            max-width: 1000px; 
-            margin: 0 auto; 
-            background: rgba(255,255,255,0.95); 
-            backdrop-filter: blur(20px);
-            border-radius: 24px; 
-            box-shadow: 0 25px 50px rgba(0,0,0,0.15); 
-            overflow: hidden; 
-        }
-        .header { 
-            background: var(--primary); 
-            color: white; 
-            padding: 40px; 
-            text-align: center; 
-        }
-        .header h1 { 
-            font-size: clamp(2em, 5vw, 3em); 
-            margin-bottom: 12px; 
-            font-weight: 800; 
-        }
-        .header p { font-size: 1.2em; opacity: 0.95; }
-        .content { padding: 50px; }
-        .section { 
-            background: rgba(248,249,250,0.8); 
-            padding: 35px; 
-            border-radius: 20px; 
-            margin-bottom: 35px; 
-            border: 1px solid rgba(255,255,255,0.2);
-        }
-        .section h3 { 
-            margin-bottom: 25px; 
-            color: #2c3e50; 
-            font-size: 1.4em; 
-            font-weight: 700;
-        }
-        .input-row { 
-            display: grid; 
-            grid-template-columns: 1fr 1fr 1fr auto; 
-            gap: 25px; 
-            align-items: end; 
-            margin-bottom: 25px; 
-        }
-        .input-group label { 
-            display: block; 
-            margin-bottom: 8px; 
-            font-weight: 600; 
-            color: #495057; 
-            font-size: 0.95em;
-        }
-        .input-group input, .input-group select { 
-            width: 100%; 
-            padding: 16px; 
-            border: 2px solid #e9ecef; 
-            border-radius: 12px; 
-            font-size: 16px; 
-            transition: all 0.3s ease; 
-            background: white;
-        }
-        .input-group input:focus, .input-group select:focus { 
-            outline: none; 
-            border-color: #3498db; 
-            box-shadow: 0 0 0 3px rgba(52,152,219,0.1);
-        }
-        .btn { 
-            border: none; 
-            padding: 16px 32px; 
-            border-radius: 12px; 
-            font-size: 16px; 
-            font-weight: 600; 
-            cursor: pointer; 
-            transition: all 0.3s ease; 
-            height: 58px;
-        }
-        .btn-primary { background: var(--success); color: white; }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(39,174,96,0.4); }
-        .btn-danger { background: var(--danger); color: white; width: 100%; padding: 24px; font-size: 1.5em; }
-        .btn-danger:hover { transform: translateY(-3px); box-shadow: 0 15px 35px rgba(231,76,60,0.4); }
-        .components-list { margin-top: 30px; }
-        .empty-state { 
-            text-align: center; 
-            padding: 60px 40px; 
-            color: #6c757d; 
-            border: 2px dashed #dee2e6; 
-            border-radius: 16px; 
-            margin-top: 20px;
-        }
-        .empty-state svg { width: 80px; height: 80px; margin-bottom: 20px; opacity: 0.5; }
-        .component-item { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            background: white; 
-            padding: 25px; 
-            border-radius: 16px; 
-            box-shadow: 0 8px 25px rgba(0,0,0,0.08); 
-            margin-bottom: 20px; 
-            border-left: 5px solid #3498db; 
-            transition: all 0.3s ease;
-        }
-        .component-item:hover { transform: translateX(5px); box-shadow: 0 12px 35px rgba(0,0,0,0.12); }
-        .results { 
-            display: none; 
-            margin-top: 50px; 
-            padding: 40px; 
-            background: linear-gradient(135deg, #f8f9fa, #e9ecef); 
-            border-radius: 20px; 
-            animation: slideIn 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-        .results.show { display: block; }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-        .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 40px; }
-        .metric-card { 
-            background: white; 
-            padding: 35px; 
-            border-radius: 20px; 
-            text-align: center; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
-        }
-        .metric-value { 
-            font-size: clamp(2.5em, 8vw, 4em); 
-            font-weight: 800; 
-            margin-bottom: 12px; 
-        }
-        .metric-value.eol { color: #27ae60; }
-        .metric-value.green { color: #27ae60; }
-        .metric-value.yellow { color: #f39c12; }
-        .metric-value.red { color: #e74c3c; }
-        .metric-label { font-size: 1.1em; color: #6c757d; font-weight: 500; }
-        .data-table { 
-            width: 100%; 
-            background: white; 
-            border-radius: 16px; 
-            overflow: hidden; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
-            margin-bottom: 40px;
-        }
-        .data-table table { width: 100%; border-collapse: collapse; }
-        .data-table th { 
-            background: var(--primary); 
-            color: white; 
-            padding: 20px 18px; 
-            text-align: left; 
-            font-weight: 600; 
-            font-size: 0.95em;
-        }
-        .data-table td { 
-            padding: 20px 18px; 
-            border-bottom: 1px solid #f1f3f4; 
-        }
-        .data-table tr:hover td { background: #f8f9fa; }
-        .insights-card { 
-            background: white; 
-            padding: 35px; 
-            border-radius: 20px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
-        }
-        .insights-card h4 { margin-bottom: 20px; color: #2c3e50; font-size: 1.3em; }
-        .insights-list { list-style: none; }
-        .insights-list li { 
-            padding: 15px 0; 
-            padding-left: 35px; 
-            position: relative; 
-            font-size: 1.05em;
-        }
-        .insights-list li:before { 
-            content: '✓'; 
-            position: absolute; 
-            left: 0; 
-            color: #27ae60; 
-            font-weight: bold; 
-            font-size: 1.3em; 
-        }
-        .print-btn { 
-            background: #6c757d; 
-            color: white; 
-            margin-top: 20px; 
-            padding: 12px 24px; 
-            font-size: 1em;
-        }
-        @media (max-width: 768px) { 
-            .input-row { grid-template-columns: 1fr; gap: 20px; }
-            .metrics-grid { grid-template-columns: 1fr; gap: 30px; }
-            .content { padding: 30px 20px; }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>🔄 Circular Twin EoL Calculator</h1>
-            <p>End-of-Life Material Value & Disassembly Score for Building Assemblies</p>
-        </div>
-        
-        <div class="content">
-            <div class="section">
-                <h3>1. Assembly Details</h3>
-                <div style="max-width: 400px;">
-                    <label>Assembly Name</label>
-                    <input type="text" id="assemblyName" placeholder="e.g., Exterior Facade Wall" value="Exterior Facade Wall">
-                </div>
-            </div>
+  <meta charset="UTF-8" />
+  <title>Loopstack Materials Intelligence – Circular Twin EoL Calculator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Chart.js CDN for simple bar chart in report -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      /* Apple‑inspired deep blues and neutrals */
+      --bg-dark: #020617;
+      --bg-dark-2: #0b1220;
+      --bg-card: rgba(15, 23, 42, 0.78);
+      --border-subtle: rgba(148, 163, 184, 0.3);
+      --primary: #2563eb;
+      --primary-soft: rgba(37, 99, 235, 0.2);
+      --accent: #38bdf8;
+      --accent-soft: rgba(56, 189, 248, 0.15);
+      --text-main: #e5e7eb;
+      --text-soft: #9ca3af;
+      --danger: #f97373;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --radius-pill: 999px;
+      --shadow-soft: 0 24px 60px rgba(15, 23, 42, 0.7);
+      --transition: 220ms cubic-bezier(0.22, 0.61, 0.36, 1);
+    }
 
-            <div class="section">
-                <h3>2. Add Components</h3>
-                <div class="input-row">
-                    <div class="input-group">
-                        <label>Material Type</label>
-                        <select id="materialSelect">
-                            <option value="">Select Material...</option>
-                        </select>
-                    </div>
-                    <div class="input-group">
-                        <label>Connection Method</label>
-                        <select id="connectionSelect">
-                            <option value="">Select Connection...</option>
-                        </select>
-                    </div>
-                    <div class="input-group">
-                        <label>Quantity (m² or units)</label>
-                        <input type="number" id="quantityInput" step="0.01" min="0" placeholder="0.00">
-                    </div>
-                    <div>
-                        <button class="btn btn-primary" onclick="addComponent()">+ ADD COMPONENT</button>
-                    </div>
-                </div>
-            </div>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-            <div class="section components-list" id="componentsList">
-                <h3>Added Components (<span id="componentCount">0</span>)</h3>
-                <div class="empty-state">
-                    <svg viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                    </svg>
-                    <p><strong>No components added yet</strong></p>
-                    <p style="margin-top: 5px;">Add your first component above to get started</p>
-                </div>
-            </div>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+        "Segoe UI", sans-serif;
+      color: var(--text-main);
+      background: radial-gradient(circle at top left, #0f172a 0, #020617 45%)
+          fixed,
+        radial-gradient(circle at bottom right, #1d4ed8 0, #020617 55%) fixed;
+      min-height: 100vh;
+      padding: 24px;
+    }
 
-            <button class="btn btn-danger" onclick="generateReport()" style="margin-bottom: 50px;">
-                📊 GENERATE CIRCULAR REPORT
-            </button>
+    .liquid-blob {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(60px);
+      opacity: 0.35;
+      z-index: -1;
+      animation: floatBlob 18s ease-in-out infinite alternate;
+    }
+    .blob-1 {
+      width: 420px;
+      height: 420px;
+      background: radial-gradient(circle at 30% 30%, #38bdf8 0, transparent 60%);
+      top: -80px;
+      left: -40px;
+    }
+    .blob-2 {
+      width: 460px;
+      height: 460px;
+      background: radial-gradient(circle at 60% 40%, #2563eb 0, transparent 65%);
+      bottom: -140px;
+      right: -120px;
+      animation-delay: 4s;
+    }
+    @keyframes floatBlob {
+      from {
+        transform: translate3d(0, 0, 0) scale(1);
+      }
+      to {
+        transform: translate3d(40px, -30px, 0) scale(1.05);
+      }
+    }
 
-            <div class="results" id="results">
-                <h3>📊 Circular Economy Report</h3>
-                <div class="metrics-grid">
-                    <div class="metric-card">
-                        <div class="metric-value eol" id="eolValue">€0</div>
-                        <div class="metric-label">EoL Material Value</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-value" id="disassemblyScore">0</div>
-                        <div class="metric-label">Disassembly Score (/10)</div>
-                    </div>
-                </div>
+    .shell {
+      max-width: 1240px;
+      margin: 0 auto;
+      background: radial-gradient(circle at top left, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.9));
+      border-radius: 32px;
+      padding: 24px 28px 32px;
+      box-shadow: var(--shadow-soft);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      backdrop-filter: blur(32px);
+    }
 
-                <div class="data-table">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Material</th>
-                                <th>Quantity</th>
-                                <th>Connection</th>
-                                <th>EoL Value (€)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="breakdownTable"></tbody>
-                    </table>
-                </div>
+    /* Header */
 
-                <div class="insights-card">
-                    <h4>🔍 Circularity Insights</h4>
-                    <ul class="insights-list" id="insightsList"></ul>
-                    <button class="btn print-btn" onclick="window.print()">🖨️ Print Report</button>
-                </div>
-            </div>
-        </div>
-    </div>
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 28px;
+    }
 
-    <script>
-        // Production Data Collections
-        const MATERIALS = [
-            { name: "Concrete", density: 2400, price: 0.05, recyclability: 6 },
-            { name: "Reinforced Steel", density: 7850, price: 0.80, recyclability: 9 },
-            { name: "Aluminum", density: 2700, price: 2.10, recyclability: 9 },
-            { name: "Float Glass", density: 2500, price: 0.15, recyclability: 8 },
-            { name: "Clay Brick", density: 1900, price: 0.08, recyclability: 5 },
-            { name: "EPS Insulation", density: 30, price: 1.20, recyclability: 2 },
-            { name: "Gypsum Board", density: 800, price: 0.12, recyclability: 7 },
-            { name: "Structural Timber", density: 500, price: 0.60, recyclability: 8 },
-            { name: "PVC Cladding", density: 1400, price: 0.90, recyclability: 4 },
-            { name: "Copper Wiring", density: 8960, price: 8.50, recyclability: 10 }
-        ];
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
 
-        const CONNECTIONS = {
-            "Screw": 0.90,
-            "Bolt": 0.85,
-            "Clip": 0.70,
-            "Adhesive": 0.10,
-            "Weld": 0.05
-        };
+    .logo {
+      width: 42px;
+      height: 42px;
+      border-radius: 18px;
+      background: conic-gradient(
+        from 160deg,
+        #38bdf8,
+        #2563eb,
+        #0ea5e9,
+        #1d4ed8,
+        #38bdf8
+      );
+      position: relative;
+      overflow: hidden;
+    }
 
-        let components = [];
+    .logo-inner {
+      position: absolute;
+      inset: 2px;
+      border-radius: 16px;
+      background: radial-gradient(circle at 20% 0, #1e293b 0, #020617 70%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
-        // Initialize app
-        window.onload = () => {
-            populateSelects();
-            updateComponentsList();
-        };
+    .logo-mark {
+      width: 68%;
+      height: 36%;
+      border-radius: 999px;
+      border: 2px solid rgba(148, 163, 184, 0.8);
+      border-top-color: #38bdf8;
+      border-left-color: #2563eb;
+      transform: skewX(-10deg);
+    }
 
-        function populateSelects() {
-            const materialSelect = document.getElementById('materialSelect');
-            const connectionSelect = document.getElementById('connectionSelect');
-            
-            MATERIALS.forEach(material => {
-                const option = document.createElement('option');
-                option.value = material.name;
-                option.textContent = material.name;
-                materialSelect.appendChild(option);
-            });
-            
-            Object.keys(CONNECTIONS).forEach(connection => {
-                const option = document.createElement('option');
-                option.value = connection;
-                option.textContent = connection;
-                connectionSelect.appendChild(option);
-            });
-        }
+    .brand-title {
+      font-size: 1.2rem;
+      font-weight: 650;
+      letter-spacing: 0.03em;
+    }
 
-        function addComponent() {
-            const materialName = document.getElementById('materialSelect').value;
-            const connectionType = document.getElementById('connectionSelect').value;
-            const quantity = parseFloat(document.getElementById('quantityInput').value);
+    .brand-sub {
+      font-size: 0.8rem;
+      color: var(--text-soft);
+    }
 
-            if (!materialName || !connectionType || !quantity || quantity <= 0) {
-                alert('Please complete all fields with valid values');
-                return;
-            }
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+    }
 
-            const material = MATERIALS.find(m => m.name === materialName);
-            const component = {
-                material,
-                materialName,
-                connectionType,
-                reusabilityFactor: CONNECTIONS[connectionType],
-                quantity
-            };
+    .top-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
 
-            components.push(component);
-            updateComponentsList();
-            resetInputs();
-        }
+    .chip {
+      border-radius: var(--radius-pill);
+      padding: 6px 14px;
+      border: 1px solid var(--border-subtle);
+      font-size: 0.76rem;
+      color: var(--text-soft);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      backdrop-filter: blur(16px);
+    }
 
-        function updateComponentsList() {
-            const container = document.getElementById('componentsList');
-            const countSpan = document.getElementById('componentCount');
-            countSpan.textContent = components.length;
+    .primary-btn {
+      cursor: pointer;
+      border-radius: var(--radius-pill);
+      border: none;
+      padding: 9px 18px;
+      background: linear-gradient(120deg, #2563eb, #38bdf8);
+      color: #f9fafb;
+      font-size: 0.82rem;
+      font-weight: 600;
+      box-shadow: 0 12px 30px rgba(37, 99, 235, 0.5);
+      transition: transform var(--transition), box-shadow var(--transition),
+        background var(--transition);
+    }
 
-            if (components.length === 0) {
-                container.innerHTML = `
-                    <h3>Added Components (<span id="componentCount">0</span>)</h3>
-                    <div class="empty-state">
-                        <svg viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                        </svg>
-                        <p><strong>No components added yet</strong></p>
-                        <p style="margin-top: 5px;">Add your first component above to get started</p>
-                    </div>
-                `;
-                return;
-            }
+    .primary-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 18px 40px rgba(37, 99, 235, 0.7);
+      background: linear-gradient(120deg, #1d4ed8, #38bdf8);
+    }
 
-            let html = `<h3>Added Components (<span id="componentCount">${components.length}</span>)</h3>`;
-            components.forEach((component, index) => {
-                const unit = component.quantity > 1 ? 'units/m²' : 'unit/m²';
-                html += `
-                    <div class="component-item">
-                        <div>
-                            <strong>${component.materialName}</strong><br>
-                            <small>${component.quantity} ${unit} • ${component.connectionType}</small>
-                        </div>
-                        <div style="color: #6c757d;">
-                            <span style="font-size: 2em;">●</span>
-                        </div>
-                    </div>
-                `;
-            });
-            container.innerHTML = html;
-        }
+    /* Tabs */
 
-        function resetInputs() {
-            document.getElementById('materialSelect').value = '';
-            document.getElementById('connectionSelect').value = '';
-            document.getElementById('quantityInput').value = '';
-        }
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 22px;
+      padding: 4px;
+      border-radius: var(--radius-pill);
+      background: radial-gradient(circle at top left, #020617, #020617);
+      border: 1px solid rgba(51, 65, 85, 0.9);
+      position: relative;
+      overflow: hidden;
+    }
 
-        function generateReport() {
-            if (components.length === 0) {
-                alert('Please add at least one component first');
-                return;
-            }
+    .tab {
+      flex: 1;
+      text-align: center;
+      padding: 9px 10px;
+      font-size: 0.82rem;
+      color: var(--text-soft);
+      cursor: pointer;
+      position: relative;
+      z-index: 1;
+      user-select: none;
+    }
 
-            // Calculate comprehensive metrics
-            let totalEolValue = 0;
-            let totalReusability = 0;
-            let totalMass = 0;
-            const breakdown = [];
+    .tab.active {
+      color: #e5e7eb;
+      font-weight: 600;
+    }
 
-            components.forEach(component => {
-                const mass = component.material.density * component.quantity;
-                totalMass += mass;
-                const eolValue = mass * component.material.price * (component.material.recyclability / 10) * component.reusabilityFactor;
-                totalEolValue += eolValue;
-                totalReusability += component.reusabilityFactor;
-                
-                breakdown.push({
-                    material: component.materialName,
-                    quantity: component.quantity.toFixed(2),
-                    connection: component.connectionType,
-                    eol: eolValue.toFixed(0),
-                    mass: mass.toFixed(0)
-                });
-            });
+    .tab-indicator {
+      position: absolute;
+      top: 3px;
+      bottom: 3px;
+      border-radius: var(--radius-pill);
+      background: radial-gradient(circle at 0 0, #1e293b, #020617);
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.9);
+      border: 1px solid var(--border-subtle);
+      transition: transform var(--transition), width var(--transition);
+      z-index: 0;
+    }
 
-            const avgDisassemblyScore = (totalReusability / components.length) * 10;
-            const scoreClass = avgDisassemblyScore >= 7 ? 'green' : avgDisassemblyScore >= 4 ? 'yellow' : 'red';
+    /* Layout for main sections */
 
-            // Update metrics
-            document.getElementById('eolValue').textContent = '€' + totalEolValue.toLocaleString('de-DE');
-            const scoreEl = document.getElementById('disassemblyScore');
-            scoreEl.textContent = avgDisassemblyScore.toFixed(1) + '/10';
-            scoreEl.className = scoreClass;
-
-            // Update breakdown table
-            let tableHtml = '';
-            breakdown.forEach(row => {
-                tableHtml += `
-                    <tr>
-                        <td><strong>${row.material}</strong></td>
-                        <td>${row.quantity}</td>
-                        <td>${row.connection}</td>
-                        <td>€${parseInt(row.eol).toLocaleString('de-DE')}</td>
-                    </tr>
-                `;
-            });
-            document.getElementById('breakdownTable').innerHTML = tableHtml;
-
-            // Generate insights
-            const insights = generateInsights(avgDisassemblyScore, components, totalEolValue, totalMass);
-            document.getElementById('insightsList').innerHTML = insights.join('');
-
-            // Show results with smooth scroll
-            const results = document.getElementById('results');
-            results.classList.add('show');
-            results.scrollIntoView({ behavior: 'smooth' });
-        }
-
-        function generateInsights(score, components, eolValue, totalMass) {
-            const highReuse = components.filter(c => c.reusabilityFactor >= 0.7).length;
-            const recoveryRate = Math.round((score / 10) * 100);
-            const insights = [
-                `✅ ${highReuse}/${components.length} components use high-reusability connections (≥70%)`,
-                `💰 Total recoverable value: €${eolValue.toLocaleString('de-DE')} from ${totalMass.toLocaleString('de-DE')}kg`,
-                `📊 ${recoveryRate}% material recovery potential based on disassembly score`,
-                `🎯 Disassembly Score ${score.toFixed(1)}/10 = ${score >= 7 ? 'Excellent' : score >= 4 ? 'Good' : 'Moderate'} circularity`
-            ];
-            
-            if (score < 4) {
-                insights.push('⚠️ <strong>Recommendation:</strong> Replace adhesives/welds with screws, bolts, or clips');
-            }
-            if (highReuse === components.length) {
-                insights.push('🏆 <strong>Perfect!</strong> All connections support full disassembly');
-            }
-            
-            return insights.map(insight => `<li>${insight}</li>`);
-        }
-    </script>
-</body>
-</html>
+    .grid {
+      display: grid;
+      grid
