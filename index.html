@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Circular Twin EoL Calculator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; padding: 2rem; background: #f5f6f8; }
+    .container { max-width: 900px; margin: 0 auto; background: #fff; padding: 2rem; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
+    h1 { margin-top: 0; }
+    label { display: block; font-size: 0.9rem; margin-bottom: 0.25rem; color: #444; }
+    input, select { width: 100%; padding: 0.5rem 0.75rem; border-radius: 8px; border: 1px solid #d0d4dc; box-sizing: border-box; }
+    .row { display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end; }
+    .col { flex: 1 1 180px; }
+    button { border-radius: 999px; border: none; padding: 0.7rem 1.5rem; cursor: pointer; font-weight: 600; }
+    .btn-primary { background: #2d6cdf; color: #fff; }
+    .btn-outline { background: #f0f2f6; color: #2d6cdf; }
+    .components-list { margin-top: 1.5rem; border-top: 1px solid #e3e6ee; padding-top: 1rem; }
+    .component-row { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px dashed #e3e6ee; font-size: 0.9rem; }
+    .status { margin-top: 1rem; padding: 0.75rem 1rem; border-radius: 8px; background: #e6f6ea; color: #256334; font-size: 0.9rem; display: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Circular Twin EoL Calculator</h1>
+
+    <!-- Assembly Input Group -->
+    <div style="margin-bottom: 1.5rem;">
+      <label for="assemblyName">Assembly Name</label>
+      <input id="assemblyName" type="text" placeholder="e.g. Timber Curtain Wall Type A" />
+    </div>
+
+    <!-- Component Input Group -->
+    <div class="row" id="componentInputs">
+      <div class="col">
+        <label for="materialType">Material Type</label>
+        <select id="materialType">
+          <option value="">Select material...</option>
+        </select>
+      </div>
+      <div class="col">
+        <label for="connectionMethod">Connection Method</label>
+        <select id="connectionMethod">
+          <option value="">Select connection...</option>
+        </select>
+      </div>
+      <div class="col">
+        <label for="quantity">Quantity (m² or Units)</label>
+        <input id="quantity" type="number" step="0.01" min="0" />
+      </div>
+      <div class="col" style="flex: 0 0 auto;">
+        <button id="addComponentBtn" class="btn-outline">+ ADD COMPONENT</button>
+      </div>
+    </div>
+
+    <!-- Component List Display -->
+    <div class="components-list">
+      <strong>Components in this Assembly</strong>
+      <div id="componentList"></div>
+    </div>
+
+    <!-- Final Action Button -->
+    <div style="margin-top: 1.5rem;">
+      <button id="generateReportBtn" class="btn-primary" style="width: 100%;">
+        GENERATE CIRCULAR REPORT
+      </button>
+    </div>
+
+    <div id="statusMessage" class="status"></div>
+  </div>
+
+  <script>
+    // MATERIAL collection
+    const MATERIALS = [
+      { id: 'mat_steel', name: 'Recycled Steel', density: 7850, price: 0.70, recyclability: 9 },
+      { id: 'mat_clt', name: 'Cross-Laminated Timber (CLT)', density: 470, price: 0.45, recyclability: 8 },
+      { id: 'mat_al', name: 'Recycled Aluminum', density: 2700, price: 1.80, recyclability: 10 },
+    ];
+
+    // CONNECTION option set
+    const CONNECTIONS = [
+      { id: 'Screw', reusability: 0.9 },
+      { id: 'Bolt', reusability: 0.95 },
+      { id: 'Adhesive', reusability: 0.1 },
+      { id: 'Weld', reusability: 0.2 },
+      { id: 'Clip', reusability: 0.8 },
+    ];
+
+    // Temporary COMPONENT list (custom state equivalent)
+    const componentListState = [];
+
+    const materialSelect = document.getElementById('materialType');
+    const connectionSelect = document.getElementById('connectionMethod');
+    const quantityInput = document.getElementById('quantity');
+    const componentListDiv = document.getElementById('componentList');
+    const statusMessage = document.getElementById('statusMessage');
+
+    // Populate dropdowns
+    MATERIALS.forEach(mat => {
+      const opt = document.createElement('option');
+      opt.value = mat.id;
+      opt.textContent = mat.name;
+      materialSelect.appendChild(opt);
+    });
+
+    CONNECTIONS.forEach(conn => {
+      const opt = document.createElement('option');
+      opt.value = conn.id;
+      opt.textContent = conn.id;
+      connectionSelect.appendChild(opt);
+    });
+
+    function renderComponents() {
+      componentListDiv.innerHTML = '';
+      if (componentListState.length === 0) {
+        componentListDiv.innerHTML = '<p style="font-size:0.85rem;color:#888;">No components added yet.</p>';
+        return;
+      }
+      componentListState.forEach(comp => {
+        const row = document.createElement('div');
+        row.className = 'component-row';
+        row.innerHTML = `
+          <span>${comp.material.name} (${comp.connection.id})</span>
+          <span>${comp.quantity} m² / units</span>
+        `;
+        componentListDiv.appendChild(row);
+      });
+    }
+
+    document.getElementById('addComponentBtn').addEventListener('click', () => {
+      const materialId = materialSelect.value;
+      const connectionId = connectionSelect.value;
+      const quantity = parseFloat(quantityInput.value);
+
+      if (!materialId || !connectionId || !(quantity > 0)) {
+        alert('Please select a material, a connection method, and enter a valid quantity.');
+        return;
+      }
+
+      const material = MATERIALS.find(m => m.id === materialId);
+      const connection = CONNECTIONS.find(c => c.id === connectionId);
+
+      // Create temporary COMPONENT record
+      const component = {
+        material,
+        connection,
+        quantity,
+      };
+
+      // Add to temporary list (custom state equivalent)
+      componentListState.push(component);
+
+      // Re-render list
+      renderComponents();
+
+      // Reset inputs
+      materialSelect.value = '';
+      connectionSelect.value = '';
+      quantityInput.value = '';
+    });
+
+    document.getElementById('generateReportBtn').addEventListener('click', () => {
+      // Here you'd compile components and eventually perform AI/EoL calculations.
+      // MVP behavior:
+      statusMessage.textContent = 'Assembly data collected. Ready for AI Calculation.';
+      statusMessage.style.display = 'block';
+    });
+
+    // Initial render
+    renderComponents();
+  </script>
+</body>
+</html>  
